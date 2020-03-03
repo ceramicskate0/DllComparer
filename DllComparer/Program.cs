@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -62,7 +62,8 @@ namespace DllComparer
         }
 
         public static List<Module> CollectModules(Process process)
-        {#REF:https://stackoverflow.com/questions/36431220/getting-a-list-of-dlls-currently-loaded-in-a-process-c-sharp
+        {
+            //REF:https://stackoverflow.com/questions/36431220/getting-a-list-of-dlls-currently-loaded-in-a-process-c-sharp
             List<Module> collectedModules = new List<Module>();
 
             IntPtr[] modulePointers = new IntPtr[0];
@@ -101,7 +102,8 @@ namespace DllComparer
 
 
     public class Native
-    {#REF:https://stackoverflow.com/questions/36431220/getting-a-list-of-dlls-currently-loaded-in-a-process-c-sharp
+    {
+        //REF:https://stackoverflow.com/questions/36431220/getting-a-list-of-dlls-currently-loaded-in-a-process-c-sharp
         [StructLayout(LayoutKind.Sequential)]
         public struct ModuleInformation
         {
@@ -129,7 +131,8 @@ namespace DllComparer
     }
 
     public class Module
-    {#REF:https://stackoverflow.com/questions/36431220/getting-a-list-of-dlls-currently-loaded-in-a-process-c-sharp
+    {
+        //REF:https://stackoverflow.com/questions/36431220/getting-a-list-of-dlls-currently-loaded-in-a-process-c-sharp
         public Module(string moduleName, IntPtr baseAddress, uint size)
         {
             this.ModuleName = moduleName;
