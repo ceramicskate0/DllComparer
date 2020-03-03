@@ -16,6 +16,7 @@ namespace DllComparer
         internal static List<Process> RunningProcesses = Process.GetProcesses().ToList();
         internal static List<Module> Unique_DLL_List = new List<Module>();
         internal static List<Processes_W_DLLs> ProcessDLL = new List<Processes_W_DLLs>();
+        private static List<string> Program_Args = new List<string>();
 
         public static void Main(string[] args)
         {
@@ -26,8 +27,41 @@ namespace DllComparer
                 Thread.Sleep(3000);
             }
             CollectProcessAndDLLInfo();
+
         }
-        public static void CollectProcessAndDLLInfo()
+        internal static void ParseArgs(string[] args)
+        {
+            Program_Args = Environment.GetCommandLineArgs().ToList();
+            if (Program_Args.Count != 0)
+            {
+                for (int x = 0; x < Program_Args.Count; ++x)
+                {
+                    switch (Program_Args.ElementAt(x).ToLower())
+                    {
+                        case "?":
+                            {
+                                HelpMenu();
+                                break;
+                            }
+                        case "-":
+                            {
+                                HelpMenu();
+                                break;
+                            }
+                        default:
+                            {
+                                break;
+                            }
+                    }
+                }
+            }
+        }
+        internal static void HelpMenu()
+        {
+
+        }
+
+        internal static void CollectProcessAndDLLInfo()
         {
             for (int x = 0; x < RunningProcesses.Count; ++x)
             {
@@ -48,11 +82,12 @@ namespace DllComparer
                 }
                 catch (Exception e)
                 {
-                    Console.WriteLine("[!ERROR!] App unable to see the following process.\nProcess Name:" + RunningProcesses.ElementAt(x).ProcessName + "\nPID:" + RunningProcesses.ElementAt(x).Id + "\nDue to:" + e.Message.ToString() + "\n\n");
+                    Console.WriteLine("-----------------");
+                    Console.WriteLine("[!ERROR!] App unable to evaluate the following process.\nProcess Name:" + RunningProcesses.ElementAt(x).ProcessName + "\nPID:" + RunningProcesses.ElementAt(x).Id + "\nDue to:" + e.Message.ToString());
                 }
             }
         }
-        public static bool IsAdministrator()
+        internal static bool IsAdministrator()
         {
             using (WindowsIdentity identity = WindowsIdentity.GetCurrent())
             {
@@ -60,8 +95,7 @@ namespace DllComparer
                 return principal.IsInRole(WindowsBuiltInRole.Administrator);
             }
         }
-
-        public static List<Module> CollectModules(Process process)
+        internal static List<Module> CollectModules(Process process)
         {
             //REF:https://stackoverflow.com/questions/36431220/getting-a-list-of-dlls-currently-loaded-in-a-process-c-sharp
             List<Module> collectedModules = new List<Module>();
