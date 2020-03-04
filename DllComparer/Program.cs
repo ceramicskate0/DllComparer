@@ -15,19 +15,19 @@ namespace DllComparer
     {
         internal static List<Process> RunningProcesses = Process.GetProcesses().ToList();
         internal static List<Module> Unique_DLL_List = new List<Module>();
+        internal static List<Module> DLL_List = new List<Module>();
         internal static List<Processes_W_DLLs> ProcessDLL = new List<Processes_W_DLLs>();
         private static List<string> Program_Args = new List<string>();
-
+        internal static bool ShowErrors = false;
         public static void Main(string[] args)
         {
 
-            if (IsAdministrator()==false)
+            if (IsAdministrator() == false)
             {
                 Console.WriteLine("[WARNING] The current account running this app is not an admin.\n[About the Warning]This means that it will only be able to see DLLs in the same user context that the app is running in.");
                 Thread.Sleep(3000);
             }
             CollectProcessAndDLLInfo();
-
         }
         internal static void ParseArgs(string[] args)
         {
@@ -38,18 +38,29 @@ namespace DllComparer
                 {
                     switch (Program_Args.ElementAt(x).ToLower())
                     {
+                        case "-e"://Dump all DLL's and count how many times each seen
+                            {
+                                ShowErrors = false;
+                                break;
+                            }
                         case "?":
                             {
                                 HelpMenu();
                                 break;
                             }
-                        case "-":
+                        case "-s"://Dump all process and show their Dll's
                             {
-                                HelpMenu();
+                                ShowDLLTree();
+                                break;
+                            }
+                        case "-d"://Dump all DLL's and count how many times each seen
+                            {
+                                CountOccurances();
                                 break;
                             }
                         default:
                             {
+                                HelpMenu();
                                 break;
                             }
                     }
@@ -58,9 +69,53 @@ namespace DllComparer
         }
         internal static void HelpMenu()
         {
+            Console.WriteLine(@"
+            Commands Menu:
+            -d Example: ./DllComparer.exe -d
+            Dump all the DLL's seen with the count of how many times each was seen.
 
+            ");
         }
-
+        internal static void ShowDLLTree()
+        {
+            for (int x=0;x< ProcessDLL.Count;++x)
+            {
+                Console.WriteLine(ProcessDLL.ElementAt(x).ProcessName);
+                for (int y = 0; y < ProcessDLL.ElementAt(x).DLL_List.Count; ++y)
+                {
+                    Console.WriteLine(@"---" + ProcessDLL.ElementAt(x).DLL_List.ElementAt(y).ModuleName);
+                }
+                Console.WriteLine("----------------------");
+            }
+        }
+        internal static void CountOccurances()
+        {
+            Dictionary<string, int> CountDLL = new Dictionary<string, int>();
+            foreach (var dll in DLL_List)
+            {
+                try
+                {
+                    if (CountDLL.ContainsKey(dll.ModuleName) == false)
+                    {
+                        CountDLL.Add(dll.ModuleName, 1);
+                    }
+                    else
+                    {
+                        CountDLL[dll.ModuleName] = CountDLL[dll.ModuleName] + 1;
+                    }
+                }
+                catch (Exception e)
+                {
+                    Console.WriteLine(e.Message.ToString());
+                }
+            }
+            CountDLL = CountDLL.OrderByDescending(pair => pair.Value).ToDictionary(pair => pair.Key, pair => pair.Value);
+            Console.WriteLine("List of Modules in CSV format");
+            for (int x = 0; x < CountDLL.Count; ++x)
+            {
+                Console.WriteLine(CountDLL.ElementAt(x).Key + "," + CountDLL.ElementAt(x).Value);
+            }
+        }
         internal static void CollectProcessAndDLLInfo()
         {
             for (int x = 0; x < RunningProcesses.Count; ++x)
@@ -70,20 +125,25 @@ namespace DllComparer
                     Processes_W_DLLs tmp = new Processes_W_DLLs();
 
                     //add all DLLs in the process to the Master DLL list
+                    //RunningProcesses.ElementAt(x).Modules.InnerList
                     Unique_DLL_List.AddRange(CollectModules(RunningProcesses.ElementAt(x)));
+                    DLL_List.AddRange(CollectModules(RunningProcesses.ElementAt(x)));
                     //mkae sure list is unique
                     Unique_DLL_List = Unique_DLL_List.Distinct().ToList();
 
                     //Create object that contains Process info and DLL info needed for later analysis
                     tmp.DLL_List.AddRange(CollectModules(RunningProcesses.ElementAt(x)));
                     tmp.PID = RunningProcesses.ElementAt(x).Id;
-                    tmp.ProcessName = RunningProcesses.ElementAt(x).ProcessName;
+                    tmp.ProcessName = RunningProcesses.ElementAt(x).MainModule.FileName;
                     ProcessDLL.Add(tmp);
                 }
                 catch (Exception e)
                 {
-                    Console.WriteLine("-----------------");
-                    Console.WriteLine("[!ERROR!] App unable to evaluate the following process.\nProcess Name:" + RunningProcesses.ElementAt(x).ProcessName + "\nPID:" + RunningProcesses.ElementAt(x).Id + "\nDue to:" + e.Message.ToString());
+                    if (ShowErrors)
+                    {
+                        Console.WriteLine("-----------------");
+                        Console.WriteLine("[!ERROR!] App unable to evaluate the following process.\nProcess Name:" + RunningProcesses.ElementAt(x).ProcessName + "\nPID:" + RunningProcesses.ElementAt(x).Id + "\nDue to:" + e.Message.ToString());
+                    }
                 }
             }
         }
@@ -120,7 +180,8 @@ namespace DllComparer
                     StringBuilder moduleFilePath = new StringBuilder(1024);
                     Native.GetModuleFileNameEx(process.Handle, modulePointers[index], moduleFilePath, (uint)(moduleFilePath.Capacity));
 
-                    string moduleName = Path.GetFileName(moduleFilePath.ToString());
+                    string moduleName = Path.GetFullPath(moduleFilePath.ToString());
+                    
                     Native.ModuleInformation moduleInformation = new Native.ModuleInformation();
                     Native.GetModuleInformation(process.Handle, modulePointers[index], out moduleInformation, (uint)(IntPtr.Size * (modulePointers.Length)));
 
