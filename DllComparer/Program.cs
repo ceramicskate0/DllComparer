@@ -28,6 +28,7 @@ namespace DllComparer
                 Thread.Sleep(3000);
             }
             CollectProcessAndDLLInfo();
+            ParseArgs(args);
         }
         internal static void ParseArgs(string[] args)
         {
@@ -44,6 +45,11 @@ namespace DllComparer
                                 break;
                             }
                         case "?":
+                            {
+                                HelpMenu();
+                                break;
+                            }
+                        case "-h":
                             {
                                 HelpMenu();
                                 break;
