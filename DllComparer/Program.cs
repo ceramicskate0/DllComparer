@@ -71,9 +71,14 @@ namespace DllComparer
         {
             Console.WriteLine(@"
             Commands Menu:
-            -d Example: ./DllComparer.exe -d
+            -d 
             Dump all the DLL's seen with the count of how many times each was seen.
 
+            -s
+            Dump all process and show their Dll's
+
+            -e
+            Show errors
             ");
         }
         internal static void ShowDLLTree()
