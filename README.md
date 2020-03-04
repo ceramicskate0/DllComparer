@@ -3,7 +3,17 @@ This is a C# application that is be able to extract DLL information from running
 
 ## Usage (after you compile it in Visual Studio)
 
-    ./DllComparer.exe
+    ./DllComparer.exe ?
+    
+    Commands Menu:
+    -d 
+    Dump all the DLL's seen with the count of how many times each was seen.
+    
+    -s
+    Dump all process and show their Dll's
+
+    -e
+    Show errors
     
 ## Features
 - View DLL information for running processes for analysis.
