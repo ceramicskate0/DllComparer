@@ -16,7 +16,7 @@ namespace DllComparer
         internal static List<Process> RunningProcesses = Process.GetProcesses().ToList();
         internal static List<Module> Unique_DLL_List = new List<Module>();
         internal static List<Module> DLL_List = new List<Module>();
-        internal static List<Processes_W_DLLs> ProcessDLL = new List<Processes_W_DLLs>();
+        internal static List<Processes_W_DLLs> Processes_Info = new List<Processes_W_DLLs>();
         private static List<string> Program_Args = new List<string>();
         internal static bool ShowErrors = false;
         public static void Main(string[] args)
@@ -39,14 +39,14 @@ namespace DllComparer
                 {
                     switch (Program_Args.ElementAt(x).ToLower())
                     {
-                        case "-e"://Dump all DLL's and count how many times each seen
+                        case "-e"://dont show errors
                             {
                                 ShowErrors = false;
                                 break;
                             }
-                        case "?":
+                        case "-t"://Dump all DLL's and count how many times each seen for a period of time
                             {
-                                HelpMenu();
+                                //CHECK_If_App_Has_Run_To_Long(Convert.ToInt32(Program_Args.ElementAt(x + 1)));
                                 break;
                             }
                         case "-h":
@@ -54,7 +54,7 @@ namespace DllComparer
                                 HelpMenu();
                                 break;
                             }
-                        case "-s"://Dump all process and show their Dll's
+                        case "-s"://Show all process and show their Dll's
                             {
                                 ShowDLLTree();
                                 break;
@@ -64,9 +64,14 @@ namespace DllComparer
                                 CountOccurances();
                                 break;
                             }
+                        case "-f"://Search/Find for Process name, PID, or DLL name
+                            {
+                                SearchDLL(Program_Args.ElementAt(x+1));
+                                break;
+                            }
                         default:
                             {
-                                HelpMenu();
+                                //HelpMenu();
                                 break;
                             }
                     }
@@ -77,6 +82,9 @@ namespace DllComparer
         {
             Console.WriteLine(@"
             Commands Menu:
+            -h
+            Show Help Menu
+
             -d 
             Dump all the DLL's seen with the count of how many times each was seen.
 
@@ -85,16 +93,43 @@ namespace DllComparer
 
             -e
             Show errors
+
+            -f {SearchTerm}
+            Search for Process name, PID, or DLL name
+
             ");
+           /* 
+            -t {# of seconds to run, ie 30}
+            Look at all DLL's and count how many times each seen for a period of time
+            */
+        }
+        internal static void SearchDLL(string Obj)
+        {
+            for (int x = 0; x < Processes_Info.Count; ++x)
+            {
+               bool ProcessNamePrinted = false;
+                for (int y = 0; y < Processes_Info.ElementAt(x).DLL_List.Count; ++y)
+                {
+                    if (Processes_Info.ElementAt(x).ProcessName.ToLower().Contains(Obj.ToLower())==true || Processes_Info.ElementAt(x).PID.ToString().Contains(Obj)==true || Processes_Info.ElementAt(x).DLL_List.ElementAt(y).ModuleName.ToString().ToLower().Contains(Obj.ToLower())==true)
+                    {
+                        if (ProcessNamePrinted == false)
+                        {
+                            Console.WriteLine("\n"+Processes_Info.ElementAt(x).ProcessName);
+                            ProcessNamePrinted = true;
+                        }
+                            Console.WriteLine(@"-" + Processes_Info.ElementAt(x).DLL_List.ElementAt(y).ModuleName);
+                    }
+                }
+            }
         }
         internal static void ShowDLLTree()
         {
-            for (int x=0;x< ProcessDLL.Count;++x)
+            for (int x=0;x< Processes_Info.Count;++x)
             {
-                Console.WriteLine(ProcessDLL.ElementAt(x).ProcessName);
-                for (int y = 0; y < ProcessDLL.ElementAt(x).DLL_List.Count; ++y)
+                Console.WriteLine(Processes_Info.ElementAt(x).ProcessName);
+                for (int y = 0; y < Processes_Info.ElementAt(x).DLL_List.Count; ++y)
                 {
-                    Console.WriteLine(@"---" + ProcessDLL.ElementAt(x).DLL_List.ElementAt(y).ModuleName);
+                    Console.WriteLine(@"---" + Processes_Info.ElementAt(x).DLL_List.ElementAt(y).ModuleName);
                 }
                 Console.WriteLine("----------------------");
             }
@@ -146,7 +181,7 @@ namespace DllComparer
                     tmp.DLL_List.AddRange(CollectModules(RunningProcesses.ElementAt(x)));
                     tmp.PID = RunningProcesses.ElementAt(x).Id;
                     tmp.ProcessName = RunningProcesses.ElementAt(x).MainModule.FileName;
-                    ProcessDLL.Add(tmp);
+                    Processes_Info.Add(tmp);
                 }
                 catch (Exception e)
                 {
@@ -203,6 +238,17 @@ namespace DllComparer
             }
 
             return collectedModules;
+        }
+        private static void CHECK_If_App_Has_Run_To_Long(int WaitTimeSeconds)
+        {
+            RunningProcesses = Process.GetProcesses().ToList();
+            var watch = System.Diagnostics.Stopwatch.StartNew();
+            while (watch.Elapsed.Seconds < WaitTimeSeconds)
+            {
+
+            }
+            watch.Stop();
+            var elapsedTime = watch.Elapsed;        
         }
     }
 
