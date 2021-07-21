@@ -1,6 +1,8 @@
 # DllComparer Intro
 This is a C# application that is be able to extract DLL information from running processes and conduct limited reporting on that data for analysis. This app could be used for both Blue team and Red teaming.
 
+# Like the work dont forget to hit that Star Button and Sponsor
+
 ## Usage (after you compile it in Visual Studio)
 
     ./DllComparer.exe ?
