@@ -81,6 +81,8 @@ namespace DllComparer
         internal static void HelpMenu()
         {
             Console.WriteLine(@"
+            created by: Ceramicskate0
+
             Commands Menu:
             -h
             Show Help Menu
