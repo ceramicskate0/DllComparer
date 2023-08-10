@@ -23,6 +23,8 @@ This is a C# application that is be able to extract DLL information from running
             -f {SearchTerm}
             Search for Process name, PID, or DLL name
 
+            -j {FileName}
+            Write a JSON with all findings to disk
     
 ## Features
 - View DLL information for running processes for analysis.
