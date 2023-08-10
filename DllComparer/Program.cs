@@ -8,6 +8,8 @@ using System.Security.Principal;
 using System.Threading;
 using System.Runtime.InteropServices;
 using System.IO;
+using System.Text.Json;
+using System.Text.Json.Serialization;
 
 namespace DllComparer
 {
@@ -18,13 +20,14 @@ namespace DllComparer
         internal static List<Module> DLL_List = new List<Module>();
         internal static List<Processes_W_DLLs> Processes_Info = new List<Processes_W_DLLs>();
         private static List<string> Program_Args = new List<string>();
+
         internal static bool ShowErrors = false;
         public static void Main(string[] args)
         {
-
+            Logo();
             if (IsAdministrator() == false)
             {
-                Console.WriteLine("[WARNING] The current account running this app is not an admin.\n[About the Warning]This means that it will only be able to see DLLs in the same user context that the app is running in.");
+                Console.WriteLine("[WARNING] The current account running this app is not an admin.\n[About the Warning] This means that it will only be able to see DLLs in the same user context that the app is running in.");
                 Thread.Sleep(3000);
             }
             CollectProcessAndDLLInfo();
@@ -69,6 +72,11 @@ namespace DllComparer
                                 SearchDLL(Program_Args.ElementAt(x+1));
                                 break;
                             }
+                        case "-j"://Search/Find for Process name, PID, or DLL name
+                            {
+                                OutputCollectionsToFile(Program_Args.ElementAt(x + 1));
+                                break;
+                            }
                         default:
                             {
                                 //HelpMenu();
@@ -97,13 +105,30 @@ namespace DllComparer
             Show errors
 
             -f {SearchTerm}
-            Search for Process name, PID, or DLL name
+            Search for Process Name, PID, or DLL name
+
+            -j {FileName}
+            Write a JSON with all findings to disk
 
             ");
            /* 
             -t {# of seconds to run, ie 30}
             Look at all DLL's and count how many times each seen for a period of time
             */
+        }
+        internal static void Logo()
+        {
+            Console.WriteLine(@"
+______ _ _ _____                                           
+|  _  \ | /  __ \                                          
+| | | | | | /  \/ ___  _ __ ___  _ __   __ _ _ __ ___ _ __ 
+| | | | | | |    / _ \| '_ ` _ \| '_ \ / _` | '__/ _ \ '__|
+| |/ /| | | \__/\ (_) | | | | | | |_) | (_| | | |  __/ |_  
+|___/ |_|_|\____/\___/|_| |_| |_| .__/ \__,_|_|  \___|_(_) 
+                                | |                        
+                                |_|                       \
+By CeramicSkate0
+");
         }
         internal static void SearchDLL(string Obj)
         {
@@ -234,12 +259,24 @@ namespace DllComparer
                     Native.GetModuleInformation(process.Handle, modulePointers[index], out moduleInformation, (uint)(IntPtr.Size * (modulePointers.Length)));
 
                     // Convert to a normalized module and add it to our list
-                    Module module = new Module(moduleName, moduleInformation.lpBaseOfDll, moduleInformation.SizeOfImage);
+                    Module module = new Module(moduleName, moduleInformation.lpBaseOfDll.ToString(), moduleInformation.SizeOfImage,process.MainModule.FileName);
                     collectedModules.Add(module);
                 }
             }
 
             return collectedModules;
+        }
+        internal static void OutputCollectionsToFile(string OutputFile)
+        {
+            if (File.Exists(OutputFile)==true || string.IsNullOrEmpty(OutputFile)==false)
+            {
+                Console.WriteLine(" [+] Writing Data to json file at: " + OutputFile);
+                File.WriteAllText(OutputFile, JsonSerializer.Serialize(Processes_Info));
+            }
+            else
+            {
+                Console.WriteLine("Input file (\""+ OutputFile+"\") name exists or empty! Doing nothing. Try again with better file name. :(");
+            }
         }
         private static void CHECK_If_App_Has_Run_To_Long(int WaitTimeSeconds)
         {
@@ -247,7 +284,7 @@ namespace DllComparer
             var watch = System.Diagnostics.Stopwatch.StartNew();
             while (watch.Elapsed.Seconds < WaitTimeSeconds)
             {
-
+                //waiting
             }
             watch.Stop();
             var elapsedTime = watch.Elapsed;        
@@ -287,23 +324,30 @@ namespace DllComparer
     public class Module
     {
         //REF:https://stackoverflow.com/questions/36431220/getting-a-list-of-dlls-currently-loaded-in-a-process-c-sharp
-        public Module(string moduleName, IntPtr baseAddress, uint size)
+        public Module(string moduleName, string baseAddress, uint size, string processName)
         {
             this.ModuleName = moduleName;
             this.BaseAddress = baseAddress;
             this.Size = size;
+            this.ProcessName = processName;
         }
 
         public string ModuleName { get; set; }
-        public IntPtr BaseAddress { get; set; }
+        public string BaseAddress { get; set; }
         public uint Size { get; set; }
+
+        public string ProcessName { get; set; }
     }
 
     //Class used to do analysis 
     public class Processes_W_DLLs
     {
-        public List<Module> DLL_List = new List<Module>();
-        public int PID;
-        public string ProcessName = "";
+        public Processes_W_DLLs()
+        {
+            DLL_List = new List<Module>();
+        }
+        public List<Module> DLL_List { get; set; }
+        public int PID { get; set; }
+        public string ProcessName { get; set; }
     }
 }
