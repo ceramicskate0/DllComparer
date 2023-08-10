@@ -31,7 +31,10 @@ This is a C# application that is be able to extract DLL information from running
 
 ## Tip
   You will have to run as admin to see every process info (that the way windows is built).
-  
+
+### Powershell 1 Liner (Work in progress)
+`Get-Process * | select -ExpandProperty modules | select -Unique | Where-Object {!$_.FileName.ToLower().Contains('c:\windows\') -and !$_.FileName.ToLower().Contains('c:\program files\windowsapps\')}| out-file "$Env:HOMEPATH\Downloads\json.json"`
+
 ## Adding to your code/Contribute
 - Fork and submit pull request
 
